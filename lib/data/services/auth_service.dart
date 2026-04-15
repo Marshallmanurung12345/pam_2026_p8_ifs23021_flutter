@@ -3,7 +3,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../models/api_response_model.dart';
 import '../models/user_model.dart';
@@ -16,8 +15,6 @@ class AuthService {
 
   // ─────────────────────────────────────────────
   // POST /auth/register
-  // Body JSON: { name, username, password }
-  // Response: { data: { userId } }
   // ─────────────────────────────────────────────
   Future<ApiResponse<String>> register({
     required String name,
@@ -28,32 +25,23 @@ class AuthService {
     final response = await _client.post(
       uri,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'name': name,
-        'username': username,
-        'password': password,
-      }),
+      body: jsonEncode({'name': name, 'username': username, 'password': password}),
     );
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final userId = (body['data'] as Map<String, dynamic>)['userId'] as String;
+      final userId =
+      (body['data'] as Map<String, dynamic>)['userId'] as String;
       return ApiResponse(
-        success: true,
-        message: body['message'] as String,
-        data: userId,
-      );
+          success: true, message: body['message'] as String, data: userId);
     }
     return ApiResponse(
-      success: false,
-      message: body['message'] as String? ?? 'Gagal mendaftar.',
-    );
+        success: false,
+        message: body['message'] as String? ?? 'Gagal mendaftar.');
   }
 
   // ─────────────────────────────────────────────
   // POST /auth/login
-  // Body JSON: { username, password }
-  // Response: { data: { authToken, refreshToken } }
   // ─────────────────────────────────────────────
   Future<ApiResponse<Map<String, String>>> login({
     required String username,
@@ -79,14 +67,12 @@ class AuthService {
       );
     }
     return ApiResponse(
-      success: false,
-      message: body['message'] as String? ?? 'Gagal login.',
-    );
+        success: false,
+        message: body['message'] as String? ?? 'Gagal login.');
   }
 
   // ─────────────────────────────────────────────
   // POST /auth/logout
-  // Body JSON: { authToken }
   // ─────────────────────────────────────────────
   Future<ApiResponse<void>> logout({required String authToken}) async {
     final uri = ApiConstants.uri(ApiConstants.authLogout);
@@ -101,15 +87,12 @@ class AuthService {
       return ApiResponse(success: true, message: body['message'] as String);
     }
     return ApiResponse(
-      success: false,
-      message: body['message'] as String? ?? 'Gagal logout.',
-    );
+        success: false,
+        message: body['message'] as String? ?? 'Gagal logout.');
   }
 
   // ─────────────────────────────────────────────
   // POST /auth/refresh-token
-  // Body JSON: { authToken, refreshToken }
-  // Response: { data: { authToken, refreshToken } }
   // ─────────────────────────────────────────────
   Future<ApiResponse<Map<String, String>>> refreshToken({
     required String authToken,
@@ -119,7 +102,8 @@ class AuthService {
     final response = await _client.post(
       uri,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'authToken': authToken, 'refreshToken': refreshToken}),
+      body: jsonEncode(
+          {'authToken': authToken, 'refreshToken': refreshToken}),
     );
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -135,14 +119,12 @@ class AuthService {
       );
     }
     return ApiResponse(
-      success: false,
-      message: body['message'] as String? ?? 'Token tidak valid.',
-    );
+        success: false,
+        message: body['message'] as String? ?? 'Token tidak valid.');
   }
 
   // ─────────────────────────────────────────────
   // GET /users/me
-  // Header: Authorization: Bearer <token>
   // ─────────────────────────────────────────────
   Future<ApiResponse<UserModel>> getMe({required String authToken}) async {
     final uri = ApiConstants.uri(ApiConstants.usersMe);
@@ -157,21 +139,15 @@ class AuthService {
         (body['data'] as Map<String, dynamic>)['user'] as Map<String, dynamic>,
       );
       return ApiResponse(
-        success: true,
-        message: body['message'] as String,
-        data: user,
-      );
+          success: true, message: body['message'] as String, data: user);
     }
     return ApiResponse(
-      success: false,
-      message: body['message'] as String? ?? 'Gagal memuat profil.',
-    );
+        success: false,
+        message: body['message'] as String? ?? 'Gagal memuat profil.');
   }
 
   // ─────────────────────────────────────────────
   // PUT /users/me
-  // Header: Authorization: Bearer <token>
-  // Body JSON: { name, username }
   // ─────────────────────────────────────────────
   Future<ApiResponse<void>> updateMe({
     required String authToken,
@@ -193,14 +169,12 @@ class AuthService {
       return ApiResponse(success: true, message: body['message'] as String);
     }
     return ApiResponse(
-      success: false,
-      message: body['message'] as String? ?? 'Gagal memperbarui profil.',
-    );
+        success: false,
+        message: body['message'] as String? ?? 'Gagal memperbarui profil.');
   }
 
   // ─────────────────────────────────────────────
   // PUT /users/me/password
-  // Body JSON: { password, newPassword }
   // ─────────────────────────────────────────────
   Future<ApiResponse<void>> updatePassword({
     required String authToken,
@@ -214,10 +188,8 @@ class AuthService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $authToken',
       },
-      body: jsonEncode({
-        'password': currentPassword,
-        'newPassword': newPassword,
-      }),
+      body: jsonEncode(
+          {'password': currentPassword, 'newPassword': newPassword}),
     );
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -225,40 +197,32 @@ class AuthService {
       return ApiResponse(success: true, message: body['message'] as String);
     }
     return ApiResponse(
-      success: false,
-      message: body['message'] as String? ?? 'Gagal memperbarui kata sandi.',
-    );
+        success: false,
+        message:
+        body['message'] as String? ?? 'Gagal memperbarui kata sandi.');
   }
 
   // ─────────────────────────────────────────────
   // PUT /users/me/photo
-  // Multipart form-data, field: file
-  // Mendukung Web (Uint8List) dan Mobile (File)
+  // Uses Uint8List (bytes) — works on Web, Android, and iOS
+  // In the UI, use Image.memory(bytes) for immediate preview
   // ─────────────────────────────────────────────
   Future<ApiResponse<void>> updatePhoto({
     required String authToken,
-    File? imageFile, // Mobile (Android/iOS)
-    Uint8List? imageBytes, // Web
+    required Uint8List imageBytes,
     String imageFilename = 'photo.jpg',
   }) async {
     final uri = ApiConstants.uri(ApiConstants.usersMePhoto);
 
     final request = http.MultipartRequest('PUT', uri)
-      ..headers['Authorization'] = 'Bearer $authToken';
-
-    if (kIsWeb && imageBytes != null) {
-      request.files.add(
+      ..headers['Authorization'] = 'Bearer $authToken'
+      ..files.add(
         http.MultipartFile.fromBytes(
           'file',
           imageBytes,
           filename: imageFilename,
         ),
       );
-    } else if (imageFile != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
-      );
-    }
 
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
@@ -268,9 +232,8 @@ class AuthService {
       return ApiResponse(success: true, message: body['message'] as String);
     }
     return ApiResponse(
-      success: false,
-      message: body['message'] as String? ?? 'Gagal memperbarui foto.',
-    );
+        success: false,
+        message: body['message'] as String? ?? 'Gagal memperbarui foto.');
   }
 
   void dispose() => _client.close();

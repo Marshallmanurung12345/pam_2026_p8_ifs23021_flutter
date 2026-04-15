@@ -1,6 +1,5 @@
 // lib/providers/auth_provider.dart
 
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,16 +22,17 @@ class AuthProvider extends ChangeNotifier {
   String _errorMessage = '';
 
   // ── Getters ──────────────────────────────────
-  AuthStatus get status        => _status;
-  UserModel? get user          => _user;
-  String? get authToken        => _authToken;
-  bool get isAuthenticated     => _authToken != null && _status == AuthStatus.authenticated;
-  String get errorMessage      => _errorMessage;
+  AuthStatus get status => _status;
+  UserModel? get user => _user;
+  String? get authToken => _authToken;
+  bool get isAuthenticated =>
+      _authToken != null && _status == AuthStatus.authenticated;
+  String get errorMessage => _errorMessage;
 
-  // ── Init: cek token tersimpan ─────────────────
+  // ── Init ─────────────────────────────────────
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    _authToken    = prefs.getString('authToken');
+    _authToken = prefs.getString('authToken');
     _refreshToken = prefs.getString('refreshToken');
 
     if (_authToken != null) {
@@ -51,7 +51,9 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _setStatus(AuthStatus.loading);
     final result = await _repository.register(
-      name: name, username: username, password: password,
+      name: name,
+      username: username,
+      password: password,
     );
     if (result.success) {
       _setStatus(AuthStatus.unauthenticated);
@@ -68,10 +70,11 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) async {
     _setStatus(AuthStatus.loading);
-    final result = await _repository.login(username: username, password: password);
+    final result =
+    await _repository.login(username: username, password: password);
     if (result.success && result.data != null) {
       await _saveTokens(
-        authToken:    result.data!['authToken']!,
+        authToken: result.data!['authToken']!,
         refreshToken: result.data!['refreshToken']!,
       );
       await loadProfile();
@@ -101,7 +104,6 @@ class AuthProvider extends ChangeNotifier {
       _user = result.data;
       _setStatus(AuthStatus.authenticated);
     } else {
-      // Token tidak valid, coba refresh
       final refreshed = await _tryRefreshToken();
       if (!refreshed) {
         await _clearTokens();
@@ -118,7 +120,9 @@ class AuthProvider extends ChangeNotifier {
     if (_authToken == null) return false;
     _setStatus(AuthStatus.loading);
     final result = await _repository.updateMe(
-      authToken: _authToken!, name: name, username: username,
+      authToken: _authToken!,
+      name: name,
+      username: username,
     );
     if (result.success) {
       await loadProfile();
@@ -151,17 +155,16 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ── Update Photo ──────────────────────────────
-  // Mendukung Web (imageBytes) dan Mobile (imageFile)
+  // Uses Uint8List for cross-platform support (Web, Android, iOS)
+  // Image.memory is used in UI for preview before upload completes
   Future<bool> updatePhoto({
-    File? imageFile,
-    Uint8List? imageBytes,
+    required Uint8List imageBytes,
     String imageFilename = 'photo.jpg',
   }) async {
     if (_authToken == null) return false;
     _setStatus(AuthStatus.loading);
     final result = await _repository.updatePhoto(
       authToken: _authToken!,
-      imageFile: imageFile,
       imageBytes: imageBytes,
       imageFilename: imageFilename,
     );
@@ -183,12 +186,13 @@ class AuthProvider extends ChangeNotifier {
     );
     if (result.success && result.data != null) {
       await _saveTokens(
-        authToken:    result.data!['authToken']!,
+        authToken: result.data!['authToken']!,
         refreshToken: result.data!['refreshToken']!,
       );
       final profileResult = await _repository.getMe(authToken: _authToken!);
       if (profileResult.success && profileResult.data != null) {
         _user = profileResult.data;
+        _setStatus(AuthStatus.authenticated);
         return true;
       }
     }
@@ -200,7 +204,7 @@ class AuthProvider extends ChangeNotifier {
     required String authToken,
     required String refreshToken,
   }) async {
-    _authToken    = authToken;
+    _authToken = authToken;
     _refreshToken = refreshToken;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('authToken', authToken);
@@ -208,7 +212,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _clearTokens() async {
-    _authToken    = null;
+    _authToken = null;
     _refreshToken = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('authToken');

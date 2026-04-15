@@ -23,15 +23,23 @@ class TodoService {
   };
 
   // ─────────────────────────────────────────────
-  // GET /todos?search=
+  // GET /todos?search=&page=&perPage=
   // ─────────────────────────────────────────────
   Future<ApiResponse<List<TodoModel>>> getTodos({
     required String authToken,
     String search = '',
+    int page = 1,
+    int perPage = 10,
   }) async {
+    final queryParams = <String, dynamic>{
+      'page': page,
+      'perPage': perPage,
+      if (search.isNotEmpty) 'search': search,
+    };
+
     final uri = ApiConstants.uri(
       ApiConstants.todos,
-      queryParameters: search.isNotEmpty ? {'search': search} : null,
+      queryParameters: queryParams,
     );
 
     final response = await _client.get(uri, headers: _authHeader(authToken));
@@ -39,7 +47,11 @@ class TodoService {
 
     if (response.statusCode == 200) {
       final data = body['data'] as Map<String, dynamic>;
-      final list = (data['todos'] as List<dynamic>)
+      // API might return 'todos' or 'data' depending on backend
+      final rawList = data['todos'] as List<dynamic>? ??
+          data['data'] as List<dynamic>? ??
+          [];
+      final list = rawList
           .map((e) => TodoModel.fromJson(e as Map<String, dynamic>))
           .toList();
       return ApiResponse(
@@ -53,8 +65,6 @@ class TodoService {
 
   // ─────────────────────────────────────────────
   // POST /todos
-  // Body JSON: { title, description }
-  // Response: { data: { todoId } }
   // ─────────────────────────────────────────────
   Future<ApiResponse<String>> createTodo({
     required String authToken,
@@ -70,7 +80,8 @@ class TodoService {
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final todoId = (body['data'] as Map<String, dynamic>)['todoId'] as String;
+      final todoId =
+      (body['data'] as Map<String, dynamic>)['todoId'] as String;
       return ApiResponse(
         success: true,
         message: body['message'] as String,
@@ -106,7 +117,6 @@ class TodoService {
 
   // ─────────────────────────────────────────────
   // PUT /todos/:id
-  // Body JSON: { title, description, isDone }
   // ─────────────────────────────────────────────
   Future<ApiResponse<void>> updateTodo({
     required String authToken,
@@ -135,8 +145,6 @@ class TodoService {
 
   // ─────────────────────────────────────────────
   // PUT /todos/:id/cover
-  // Multipart form-data, field: file
-  // Mendukung Web (Uint8List) dan Mobile (File)
   // ─────────────────────────────────────────────
   Future<ApiResponse<void>> updateTodoCover({
     required String authToken,
@@ -182,7 +190,8 @@ class TodoService {
     required String todoId,
   }) async {
     final uri = ApiConstants.uri(ApiConstants.todoById(todoId));
-    final response = await _client.delete(uri, headers: _authHeader(authToken));
+    final response =
+    await _client.delete(uri, headers: _authHeader(authToken));
     final body = jsonDecode(response.body) as Map<String, dynamic>;
 
     if (response.statusCode == 200 || response.statusCode == 204) {
