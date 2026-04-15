@@ -1,6 +1,5 @@
 // lib/data/services/auth_repository.dart
 
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../models/api_response_model.dart';
@@ -13,9 +12,6 @@ class AuthRepository {
   final AuthService _service;
 
   String _networkErrorMessage(Object error) {
-    if (error is SocketException) {
-      return 'Tidak dapat terhubung ke server. Periksa alamat backend dan koneksi jaringan.';
-    }
     if (error is http.ClientException) {
       return 'Request ke server gagal. Periksa URL backend, CORS, atau konfigurasi HTTPS.';
     }
@@ -113,14 +109,12 @@ class AuthRepository {
 
   Future<ApiResponse<void>> updatePhoto({
     required String authToken,
-    File? imageFile,
-    Uint8List? imageBytes,
+    required Uint8List imageBytes,
     String imageFilename = 'photo.jpg',
   }) async {
     try {
       return await _service.updatePhoto(
         authToken: authToken,
-        imageFile: imageFile,
         imageBytes: imageBytes,
         imageFilename: imageFilename,
       );
