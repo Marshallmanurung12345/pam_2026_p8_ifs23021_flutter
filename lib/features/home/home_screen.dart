@@ -19,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final token = context.read<AuthProvider>().authToken;
       if (token != null) {
         context.read<TodoProvider>().loadTodos(authToken: token);
@@ -26,7 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _refresh(BuildContext context) async {
+  Future<void> _refresh() async {
+    if (!mounted) return;
     final token = context.read<AuthProvider>().authToken;
     if (token != null) {
       await context.read<TodoProvider>().loadTodos(authToken: token);
@@ -53,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: RefreshIndicator(
-        onRefresh: () => _refresh(context),
+        onRefresh: _refresh,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
@@ -317,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         subtitle:
                                             'Pull the latest tasks from server',
                                         accent: Colors.orange,
-                                        onTap: () => _refresh(context),
+                                        onTap: _refresh,
                                       ),
                                     ),
                                   ],
